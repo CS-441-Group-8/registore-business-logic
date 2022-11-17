@@ -50,7 +50,7 @@ async function main() {
     // await createNewTransaction(); // Works
     // await getProduct(); // Works
     // await updateTransactionById(); // Works
-    await deleteTransactionById(); // Works
+    // await deleteTransactionById(); // Works
 }
 
 
