@@ -1,0 +1,7 @@
+{
+    "host": "localhost",
+    "user": "nealarchival",
+    "password": "",
+    "port": 2001,
+    "database": "development"
+}
