@@ -31,4 +31,4 @@ interface EmployeeSchema {
     starting_amount: number;
 }
 
-export default EmployeeSchema;
+export {EmployeeSchema};

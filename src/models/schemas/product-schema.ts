@@ -28,4 +28,4 @@ interface ProductSchema {
 }
 
 
-export default ProductSchema;
+export{ProductSchema};

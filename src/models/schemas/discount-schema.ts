@@ -12,4 +12,4 @@ interface DiscountSchema {
     amount: number;
 }
 
-export default DiscountSchema;
+export{DiscountSchema};
