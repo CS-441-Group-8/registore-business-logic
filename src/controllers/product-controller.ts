@@ -241,6 +241,48 @@ namespace ProductController {
             data: nodeId // Return the Node ID of the deleted product
         }
     }
+    export async function deleteProductbySKU(sku: string): Promise<QueryResult> {
+        let graphQuery = `query {
+            productBySku(sku: "${sku}")
+              {
+                nodeId 
+              }
+          }
+        `;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+
+        const myNode = String(queryResult.data.productBySku.nodeId);
+        // Node ID can be obtained from a query.
+        const newgraphQuery = `mutation {
+            deleteProduct(input: {
+                nodeId: "${myNode}"
+            }) {
+                product {
+                    nodeId 
+                }
+            }
+        }`;
+        const myResults = await execGraphQLQuery(newgraphQuery);
+
+        if (myResults.error !== null) {
+            return {
+                error: myResults.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: myNode // Return the Node ID of the deleted product
+        }
+    }
 
 
 
