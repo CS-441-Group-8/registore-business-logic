@@ -1,6 +1,6 @@
 import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 
-import { Product} from "../models/product-model";
+import { Product } from "../models/product-model";
 
 namespace ProductController {
     // CREATE FUNCTIONS
@@ -11,7 +11,7 @@ namespace ProductController {
                 clientMutationId : "${Date.now()}"
                 product:{sku: "${product.sku}", title: "${product.title}", brand: "${product.brand}", 
                 summary: "${product.summary}", price: ${product.price}, quantity: ${product.quantity}, 
-                category: "${product.category}", creator: ${product.creator}, creationDate: "${Date.now()}", supplier: "${product.supplier}"}
+                category: "${product.category}", creator: ${product.creator}, creationDate: "${product.creation_date}", supplier: "${product.supplier}"}
               }) {
               product {
                 sku
@@ -28,7 +28,7 @@ namespace ProductController {
             }
         }
 
-        
+
         const sku = queryResult.data.createProduct.product.sku;
         return {
             error: null,
@@ -72,6 +72,42 @@ namespace ProductController {
             data: product
         }
     }
+    export async function getAllProducts(): Promise<QueryResult> {
+        // Our query includes a unique node id, so that we can delete that node.
+        const graphQuery = `query {
+            allProducts {
+               edges {
+                node {
+                    sku
+                    title
+                    brand
+                    summary
+                    price
+                    quantity
+                    category
+                    creator
+                    creationDate
+                    supplier
+                  }
+                }
+            }
+            }`;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+
+        const product = JSON.stringify(queryResult.data.allProducts);
+
+        return {
+            error: null,
+            data: product
+        }
+    }
 
 
     // UPDATE FUNCTIONS
@@ -102,6 +138,78 @@ namespace ProductController {
             data: queryResult.data.updateProductBySku.product.price
         }
 
+    }
+    // UPDATE FUNCTIONS
+    export async function updateQuantity(sku: string, quantity: number): Promise<QueryResult> {
+        const graphQuery = `mutation {
+        updateProductBySku( input: {
+            sku: "${sku}",
+            productPatch: {
+                quantity: ${quantity}
+            }
+        }) {
+            product {
+                sku
+                quantity
+            }
+        }
+    }`;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: queryResult.data.updateProductBySku.product.quantity
+        }
+    }
+    // UPDATE FUNCTIONS
+    export async function updateProduct(product: Product): Promise<QueryResult> {
+        const graphQuery = `mutation {
+        updateProductBySku( input: {
+            sku: "${product.sku}",
+            productPatch: {
+              	title: "${product.title}"
+              	brand: "${product.brand}"
+              	summary: "${product.summary}"
+              	price: ${product.price}
+              	quantity: ${product.quantity}
+              	category: "${product.category}"
+              	creator: ${product.creator}
+              	creationDate: "${product.creation_date}"
+              	supplier: "${product.supplier}"
+            }
+        }) {
+            product {
+              	sku
+                title
+              	brand
+              	summary
+              	price
+              	quantity
+              	category
+              	creator
+              	creationDate
+              	supplier
+            }
+        }
+    }`;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: queryResult.data.updateProductBySku.product
+        }
     }
 
 

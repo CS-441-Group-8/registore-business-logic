@@ -49,6 +49,10 @@ class EmployeeBuilder implements EmployeeBuilder {
         this.employee.last_name = last_name;
         return this;
     }
+    setCity(city: string) {
+        this.employee.city = city;
+        return this;
+    }
     setPhoneNumber(phone_number: string) {
         this.employee.phone_number = phone_number;
         return this;
@@ -81,7 +85,6 @@ class EmployeeBuilder implements EmployeeBuilder {
         this.employee.starting_amount = starting_amount;
         return this;
     }
-
 }
 export {
     EmployeeBuilder

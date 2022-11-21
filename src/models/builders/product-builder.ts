@@ -16,6 +16,7 @@ interface ProductBuilder {
 }
 class ProductBuilder implements ProductBuilder {
     private product: Product;
+    yourDate = new Date().toLocaleString('en-US', {timeZone: 'Asia/Kolkata'});
     constructor() {
         this.product = {
             sku: "",
@@ -26,7 +27,7 @@ class ProductBuilder implements ProductBuilder {
             quantity: 0,
             category: "",
             creator: 0,
-            creation_date: "",
+            creation_date: String(this.yourDate),
             supplier: ""
         };
     }
@@ -71,7 +72,9 @@ class ProductBuilder implements ProductBuilder {
         this.product.supplier = supplier;
         return this;
     }
+    build()
+    {
+        return this.product;
+    }
 }
-export {
-    ProductBuilder
-};
+export default ProductBuilder;
