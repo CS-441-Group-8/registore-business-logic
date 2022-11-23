@@ -5,10 +5,9 @@ namespace EmployeeController {
     // CREATE FUNCTIONS
     export async function createNewEmployee(employee: Employee): Promise<QueryResult> {
         const graphQuery = `mutation {
-            createNewEmployee (
+            createEmployee (
               input: {
                 employee:{
-                    id: "${employee.id}" 
                     firstName: "${employee.first_name}" 
                     lastName: "${employee.last_name}" 
                     phoneNumber: "${employee.phone_number}" 
@@ -19,7 +18,8 @@ namespace EmployeeController {
                     zipcode: "${employee.zipcode}" 
                     password: "${employee.password}" 
                     hireDate: "${employee.hire_date}" 
-                    startingAmount: ${employee.starting_amount}}
+                    startingAmount: ${employee.starting_amount}
+                }
               }) {
               employee {
                 id
@@ -28,6 +28,7 @@ namespace EmployeeController {
           }`;
 
         const queryResult = await execGraphQLQuery(graphQuery);
+        
         if (queryResult.error !== null) {
             return {
                 error: queryResult.error,
@@ -36,6 +37,7 @@ namespace EmployeeController {
         }
         
         const id = queryResult.data.createEmployee.employee.id;
+       
         return {
             error: null,
             data: id
@@ -44,23 +46,25 @@ namespace EmployeeController {
         // READ FUNCTIONS
         export async function getEmployee(employeeId: number): Promise<QueryResult> {
             const graphQuery = `query {
-                EmployeeById(id: "${employeeId}") {
-                    id
-                    firstName
-                    lastName
-                    phoneNumber
-                    email
-                    address
-                    city
-                    state
-                    zipcode
-                    password
-                    hireDate
-                    startingAmount
+                employeeById(
+                    id: "${employeeId}" ) {
+                        id
+                        firstName
+                        lastName
+                        phoneNumber
+                        email
+                        address
+                        city
+                        state
+                        zipcode
+                        password
+                        hireDate
+                        startingAmount
                 }
-            }
-            `;
+            }`;
+
             const queryResult = await execGraphQLQuery(graphQuery);
+            
             if (queryResult.error !== null) {
                 return {
                     error: queryResult.error,
@@ -68,12 +72,11 @@ namespace EmployeeController {
                 }
             }
     
-    
-            const transaction = queryResult.data.transactionById;
+            const employee = queryResult.data.employeeById;
     
             return {
                 error: null,
-                data: transaction
+                data: employee
             }
         }
     
@@ -94,7 +97,7 @@ namespace EmployeeController {
                             zipcode: "${zipcode}",
                             password: "${password}",
                             hireDate: "${hire_date}",
-                            startingAmount: "${starting_amount}"
+                            startingAmount: ${starting_amount}
                 }
             }) {
                 employee {
@@ -123,23 +126,26 @@ if (queryResult.error !== null) {
     }
 }
 
-const sku = queryResult.data.createProduct.product.sku;
+const id = queryResult.data.createEmployee.employee.id;
+
 return {
     error: null,
-    data: sku
+    data: id
     }
 }
     // DELETE FUNCTIONS
     export async function deleteEmployee(employeeId: number): Promise<QueryResult> {
         const graphQuery = `mutation {
-            deleteEmployeeById(input: {
-                id: "${employeeId}"
+            deleteEmployeeById(
+                input: {
+                    id: "${employeeId}"
             }) {
                 employee {
                     id
                 }
             }
         }`;
+
         const queryResult = await execGraphQLQuery(graphQuery);
 
         if (queryResult.error !== null) {
