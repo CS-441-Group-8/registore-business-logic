@@ -1,11 +1,31 @@
+// Database Imports
 import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 
-import { Transaction, TransactionSchema, PaymentType } from "../models/transaction-model";
+// Model Imports
+import {
+    Transaction,
+    TransactionItems,
+    TransactionDiscounts
+} from "../models/transaction-model";
+
+// Builder Imports
+import { 
+    CashTransactionBuilder, 
+    CreditCardTransactionBuilder 
+} from "../models/builders/transaction-builders";
+
+// Utility Imports
+import { currentDateTime, isISO8601Date } from "../utils/datetime";
+
+import { Product } from "../models/product-model";
+import { Discount } from "../models/discount-model";
+
+
 
 namespace TransactionController {
-    // CREATE FUNCTIONS
+    // Creates a new transaction in the database
     export async function createNewTransaction(transaction: Transaction): Promise<QueryResult> {
-        const graphQuery = `mutation {
+        let graphQuery = `mutation {
                 createTransaction( input: {
                     transaction: {
                         date: "${transaction.date}"
@@ -24,7 +44,113 @@ namespace TransactionController {
                 }
             }
         }`;
-        const queryResult = await execGraphQLQuery(graphQuery);
+
+        let transactionCreateResult = await execGraphQLQuery(graphQuery);
+        // Add to TransactionItems table
+        let transactionItemCreateResult = await addTransactionItems(transaction.items, transactionCreateResult.data.createTransaction.transaction.id);
+        if (transactionItemCreateResult.error !== null) {
+            console.log("Error adding transaction items:\n" + transactionItemCreateResult.error);
+        }
+
+        if (transaction.discounts.length > 0) {
+            // Add to TransactionDiscounts table
+            let transactionDiscountCreateResult = await addTransactionDiscounts(transaction.discounts, transactionCreateResult.data.createTransaction.transaction.id);
+            if (transactionDiscountCreateResult.error !== null) {
+                console.log(transactionDiscountCreateResult.error);
+            }
+        }
+
+        if (transactionCreateResult.error !== null) {
+            console.log("Error creating transaction");
+            return {
+                error: transactionCreateResult.error,
+                data: null
+            }
+        }
+
+        const createID = transactionCreateResult.data.createTransaction.transaction.id;
+
+        return {
+            error: null,
+            data: {
+                createID: createID
+            }
+        }
+
+    }
+
+    async function addTransactionItems(transactionItems: TransactionItems, transactionID: number): Promise<QueryResult> {
+        // Loop through transactionItems and add them to the database
+        for (let i = 0; i < transactionItems.length; i++) {
+            let graphQuery = `mutation {
+                createTransactionItem( input: {
+                    transactionItem: {
+                        transactionId: ${transactionID}
+                        sku: "${transactionItems[i].sku}"
+                        quantity: ${transactionItems[i].quantity}
+                    }
+                }) {
+                    transactionItem {
+                        transactionId
+                    }
+                }
+            }`;
+            const queryResult = await execGraphQLQuery(graphQuery);
+            if (queryResult.error !== null) {
+                console.log("Error creating transaction item");
+            }
+        }
+        
+        return {
+            error: null,
+            data: transactionID
+        }
+
+   }
+
+   async function addTransactionDiscounts(discounts: TransactionDiscounts, transactionID: number): Promise<QueryResult> {
+        // Loop through discounts and add them to the database
+        for (let i = 0; i < discounts.length; i++) {
+            let graphQuery = `mutation {
+                createTransactionDiscount( input: {
+                    transactionDiscount: {
+                        transactionId: ${transactionID}
+                        discountId: ${discounts[i].discountId}
+                    }
+                }) {
+                    transactionDiscount {
+                        transactionId
+                    }
+                }
+            }`;
+            const queryResult = await execGraphQLQuery(graphQuery);
+            if (queryResult.error !== null) {
+                console.log("Error creating transaction discount");
+            }
+        }
+        
+        return {
+            error: null,
+            data: transactionID
+        }
+
+    }
+
+    // FRONTEND CREATE FUNCTIONS
+
+    // Creates a Transaction Object given products, discount, and salesperson ID
+    export async function createCashTransaction(products: Array<Product>, discounts: Array<Discount> | null, salespersonID: number): Promise<QueryResult> {
+        let total = calculateTotalWithDiscount(products, discounts); // Calculate total, returns a number
+
+        // Add the transaction record to the database
+        let newCashTransaction = new CashTransactionBuilder()
+            .setDate(currentDateTime())
+            .setSalespersonId(salespersonID)
+            .setTotal(total)
+            .setDiscounts(discounts ? discounts : [])
+            .setItems(products)
+            .build();
+        const queryResult = await createNewTransaction(newCashTransaction); // Add the transaction to the database
 
         if (queryResult.error !== null) {
             return {
@@ -33,13 +159,75 @@ namespace TransactionController {
             }
         }
 
-        
-        const createID = queryResult.data.createTransaction.transaction.id;
+        const createID = queryResult.data.createID;
+
         return {
             error: null,
             data: createID
         }
+
     }
+
+
+    export async function createCardTransaction(products: Array<Product>, discount: Array<Discount> | null, salespersonID: number): Promise<QueryResult> {
+        let total = calculateTotalWithDiscount(products, discount);
+        let newCardTransaction = new CreditCardTransactionBuilder()
+            .setDate(currentDateTime())
+            .setSalespersonId(salespersonID)
+            .setTotal(total)
+            .setDiscounts(discount ? discount : [])
+            .setItems(products)
+            .build();
+
+        let queryResult = await createNewTransaction(newCardTransaction);
+
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: null
+        }
+
+    }
+
+    // Calculates the total (before discount) of a transaction
+    export function calculateTotal(products: Array<Product>): number {
+        // Calculate the cost of the transaction
+        let total: number = 0;
+        products.forEach((product: Product) => {
+            total += product.price;
+        });
+        // Round the total to 2 decimal places
+        return Math.round(total * 100) / 100;
+    }
+
+
+    export function calculateTotalWithDiscount(products: Array<Product>, discount: Array<Discount> | null): number {
+        // Calculate the cost of the transaction
+        let total: number = 0;
+        products.forEach((product: Product) => {
+            total += product.price;
+        });
+        // Apply the discounts
+        if (discount !== null) {
+            // Calculate the discounted total
+            discount.forEach((discount: Discount) => {
+                total -= discount.amount;
+                if (total < 0) {
+                    total = 0;
+                }
+            });
+        }
+        // Round the total to 2 decimal places
+        return Math.round(total * 100) / 100;
+
+    }
+
 
 
     // READ FUNCTIONS
@@ -67,14 +255,55 @@ namespace TransactionController {
             }
         }
 
-
         const transaction = queryResult.data.transactionById;
 
         return {
             error: null,
             data: transaction
         }
+
     }
+
+
+    export async function getTransactionOnDate(date: string): Promise<QueryResult> {
+        if (!isISO8601Date(date)) {
+            return {
+                error: "Invalid date format",
+                data: null
+            }
+        }
+
+        const graphQuery = `query {
+            transactionsOnDate(date: "${date}") {
+                id
+                date
+                salespersonId
+                total
+                discount
+                finalTotal
+                paymentType
+                creditcardType
+                creditcardNumber
+                creditcardExpiration
+            }
+        `;
+
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: queryResult.data.transactionsOnDate
+        }
+
+    }
+
+
 
 
     // UPDATE FUNCTIONS
@@ -134,6 +363,7 @@ namespace TransactionController {
             error: null,
             data: transactionId // Return the ID of the deleted transaction
         }
+
     }
 
 
