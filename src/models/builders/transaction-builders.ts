@@ -1,16 +1,29 @@
-import { PaymentType, Transaction } from "../transaction-model";
+// Model Imports
+import { Product } from "../product-model";
+import { Discount } from "../discount-model";
+import {
+        PaymentType, 
+        Transaction, 
+        TransactionItem, 
+        productsToTransactionItems, 
+        discountsToDiscountItems,
+        TransactionDiscounts
+    } from "../transaction-model";
+
 
 interface TransactionBuilder {
     build(): Transaction;
 
     setDate(date: string): TransactionBuilder;
+    setItems(items: Array<Product>): TransactionBuilder;
     setSalespersonId(salesperson_id: number): TransactionBuilder;
     setTotal(total: number): TransactionBuilder;
-    setDiscount(discount: number): TransactionBuilder;
+    setDiscounts(discount: Array<Discount>): TransactionBuilder;
 }
 
-class CreditCardTransactionBuilder implements TransactionBuilder {
-    private transaction: Transaction;
+
+class GenericTransactionBuilder implements TransactionBuilder {
+    transaction: Transaction;
 
     constructor() {
         this.transaction = {
@@ -20,37 +33,55 @@ class CreditCardTransactionBuilder implements TransactionBuilder {
             total: 0,
             discount: 0,
             final_total: 0,
-            payment_type: PaymentType.credit,
-            creditcard_type: "",
-            creditcard_number: "",
-            creditcard_expiration: ""
-        };
+            payment_type: PaymentType.cash,
+            creditcard_type: null,
+            creditcard_number: null,
+            creditcard_expiration: null,
+            items: [],
+            discounts: []
+        }
     }
 
     build(): Transaction {
         return this.transaction;
     }
 
-    
-
-    setDate(date: string): CreditCardTransactionBuilder {
+    setDate(date: string): TransactionBuilder {
         this.transaction.date = date;
         return this;
     }
 
-    setSalespersonId(salesperson_id: number): CreditCardTransactionBuilder {
+    setItems(items: Array<Product>): TransactionBuilder {
+        this.transaction.items = productsToTransactionItems(items, this.transaction.id);
+        return this;
+    }
+
+    setSalespersonId(salesperson_id: number): TransactionBuilder {
         this.transaction.salesperson_id = salesperson_id;
         return this;
     }
 
-    setTotal(total: number): CreditCardTransactionBuilder {
+    setTotal(total: number): TransactionBuilder {
         this.transaction.total = total;
         return this;
     }
 
-    setDiscount(discount: number): CreditCardTransactionBuilder {
-        this.transaction.discount = discount;
+    setDiscounts(discounts: Array<Discount>): TransactionBuilder {
+        this.transaction.discounts = discountsToDiscountItems(discounts, this.transaction.id);
+        // Calculate the discount amount
+        let discountAmount = 0;
+        for (let discount of discounts) {
+            discountAmount += discount.amount;
+        }
+        this.transaction.discount = discountAmount;
+        this.transaction.final_total = this.transaction.total - discountAmount;
         return this;
+    }
+}
+
+class CreditCardTransactionBuilder extends GenericTransactionBuilder {
+    build(): Transaction {
+        return this.transaction;
     }
 
     setCreditCardType(creditcard_type: string): CreditCardTransactionBuilder {
@@ -69,48 +100,12 @@ class CreditCardTransactionBuilder implements TransactionBuilder {
     }
 }
 
-class CashTransactionBuilder implements TransactionBuilder {
-    private transaction: Transaction;
-
-    constructor() {
-        this.transaction = {
-            id: 0,
-            date: "",
-            salesperson_id: 0,
-            total: 0,
-            discount: 0,
-            final_total: 0,
-            payment_type: PaymentType.cash,
-            creditcard_type: null,
-            creditcard_number: null,
-            creditcard_expiration: null
-        };
-    }
-
+class CashTransactionBuilder extends GenericTransactionBuilder {
     build(): Transaction {
         return this.transaction;
     }
-
-    setDate(date: string): CashTransactionBuilder {
-        this.transaction.date = date;
-        return this;
-    }
-
-    setSalespersonId(salesperson_id: number): CashTransactionBuilder {
-        this.transaction.salesperson_id = salesperson_id;
-        return this;
-    }
-
-    setTotal(total: number): CashTransactionBuilder {
-        this.transaction.total = total;
-        return this;
-    }
-
-    setDiscount(discount: number): CashTransactionBuilder {
-        this.transaction.discount = discount;
-        return this;
-    }
 }
+
 
 export {
     CreditCardTransactionBuilder,
