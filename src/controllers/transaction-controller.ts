@@ -9,9 +9,9 @@ import {
 } from "../models/transaction-model";
 
 // Builder Imports
-import { 
-    CashTransactionBuilder, 
-    CreditCardTransactionBuilder 
+import {
+    CashTransactionBuilder,
+    CreditCardTransactionBuilder
 } from "../models/builders/transaction-builders";
 
 // Utility Imports
@@ -19,6 +19,22 @@ import { currentDateTime, isISO8601Date } from "../utils/datetime";
 
 import { Product } from "../models/product-model";
 import { Discount } from "../models/discount-model";
+
+
+namespace Constants {
+    export var nodes = `
+        id
+        date
+        salesperson_id: salespersonId
+        total
+        discount
+        final_total: finalTotal
+        payment_type: paymentType
+        creditcard_type: creditcardType
+        creditcard_number: creditcardNumber
+        creditcard_expiration: creditcardExpiration
+    `;
+}
 
 
 
@@ -100,15 +116,15 @@ namespace TransactionController {
                 console.log("Error creating transaction item");
             }
         }
-        
+
         return {
             error: null,
             data: transactionID
         }
 
-   }
+    }
 
-   async function addTransactionDiscounts(discounts: TransactionDiscounts, transactionID: number): Promise<QueryResult> {
+    async function addTransactionDiscounts(discounts: TransactionDiscounts, transactionID: number): Promise<QueryResult> {
         // Loop through discounts and add them to the database
         for (let i = 0; i < discounts.length; i++) {
             let graphQuery = `mutation {
@@ -128,7 +144,7 @@ namespace TransactionController {
                 console.log("Error creating transaction discount");
             }
         }
-        
+
         return {
             error: null,
             data: transactionID
@@ -234,16 +250,7 @@ namespace TransactionController {
     export async function getTransaction(transactionId: number): Promise<QueryResult> {
         const graphQuery = `query {
             transactionById(id: "${transactionId}") {
-                id
-                date
-                salespersonId
-                total
-                discount
-                finalTotal
-                paymentType
-                creditcardType
-                creditcardNumber
-                creditcardExpiration
+                ${Constants.nodes} 
             }
         }
         `;
@@ -256,6 +263,8 @@ namespace TransactionController {
         }
 
         const transaction = queryResult.data.transactionById;
+        transaction.final_total = parseFloat(transaction.final_total);
+        transaction.discount = parseFloat(transaction.discount);
 
         return {
             error: null,
@@ -265,28 +274,18 @@ namespace TransactionController {
     }
 
 
-    export async function getTransactionOnDate(date: string): Promise<QueryResult> {
-        if (!isISO8601Date(date)) {
-            return {
-                error: "Invalid date format",
-                data: null
-            }
-        }
 
+
+    export async function getAllTransactions(): Promise<QueryResult> {
         const graphQuery = `query {
-            transactionsOnDate(date: "${date}") {
-                id
-                date
-                salespersonId
-                total
-                discount
-                finalTotal
-                paymentType
-                creditcardType
-                creditcardNumber
-                creditcardExpiration
+            allTransactions {
+                edges {
+                    node {
+                        ${Constants.nodes}
+                    }
+                }
             }
-        `;
+        }`;
 
         const queryResult = await execGraphQLQuery(graphQuery);
         if (queryResult.error !== null) {
@@ -296,13 +295,71 @@ namespace TransactionController {
             }
         }
 
+        let transactions: Array<Transaction> = [];
+        // Iterate through edges, get the node, transaction and push into array of transactions
+
+        queryResult.data.allTransactions.edges.forEach((edge: any) => {
+            // Stringify the node to get rid of the __typename
+            let transaction = JSON.parse(JSON.stringify(edge.node));
+            // Convert to the right types
+            transaction.discount = parseFloat(transaction.discount);
+            transaction.final_total = parseFloat(transaction.final_total);
+            // Modify transaction final_total and discount because GraphQL returns 
+            transactions.push(transaction as Transaction); // Typecast to Transaction
+        });
+
         return {
             error: null,
-            data: queryResult.data.transactionsOnDate
+            data: transactions
+        }
+    }
+
+
+    export async function getTransactionsBySalesperson(salesPersonId: number): Promise<QueryResult> {
+        // Get all transactions 
+        let allTransactions = await getAllTransactions();
+        if (allTransactions.error !== null) {
+            return {
+                error: allTransactions.error,
+                data: null
+            }
+        }
+
+        let salespersonTransactions: Array<Transaction> = [];
+        // Filter out the transactions that are not by the salesperson
+        allTransactions.data.forEach((transaction: Transaction) => {
+            if (transaction.salesperson_id === salesPersonId) {
+                salespersonTransactions.push(transaction);
+            }
+        });
+
+        return {
+            error: null,
+            data: salespersonTransactions
         }
 
     }
 
+    export async function getTransactionsByTotal(): Promise<QueryResult> {
+        let allTransactions = await getAllTransactions();
+        if (allTransactions.error !== null) {
+            return {
+                error: allTransactions.error,
+                data: null
+            }
+        }
+
+        // Sort the objects
+        let transactions = allTransactions.data;
+        var transactionsNew = transactions.sort((a: Transaction, b: Transaction) => {
+            return a.final_total - b.final_total;
+        });
+
+        return {
+            error: null,
+            data: transactions
+        }
+    }
 
 
 
