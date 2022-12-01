@@ -4,7 +4,9 @@ import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 // Model Imports
 import {
     Transaction,
+    TransactionItem,
     TransactionItems,
+    TransactionDiscount,
     TransactionDiscounts
 } from "../models/transaction-model";
 
@@ -23,18 +25,71 @@ import { Discount } from "../models/discount-model";
 
 namespace Constants {
     export var nodes = `
-        id
-        date
-        salesperson_id: salespersonId
-        total
-        discount
-        final_total: finalTotal
-        payment_type: paymentType
-        creditcard_type: creditcardType
-        creditcard_number: creditcardNumber
-        creditcard_expiration: creditcardExpiration
+    id
+    date
+    salesperson_id: salespersonId
+    total
+    discount
+    final_total: finalTotal
+    payment_type: paymentType
+    creditcard_type: creditcardType
+    creditcard_number: creditcardNumber
+    creditcard_expiration: creditcardExpiration
+    items: transactionItemsByTransactionId {
+        edges {
+            node {
+                transaction_id: transactionId
+                sku 
+                quantity
+            }
+        }
+    }
+    discounts: transactionDiscountsByTransactionId {
+        edges {
+            node {
+                transaction_id: transactionId
+                discount_id: discountId
+            }
+        }
+    }
     `;
 }
+
+
+
+namespace Utilities {
+    // Pass in
+    export function parseTransactionItems(edges: any): TransactionItems {
+        let transactionItems: TransactionItems = [];
+        edges.forEach((edge: any) => {
+            let item = edge.node;
+            transactionItems.push(item as TransactionItem);
+        });
+        return transactionItems;
+    }
+    // Iterate through edges, get the node, transaction and push into array of transactions
+    export function parseTransactionDiscounts(edges: any): TransactionDiscounts {
+        let transactionDiscounts: TransactionDiscounts = [];
+        edges.forEach((edge: any) => {
+            let discount = edge.node;
+            transactionDiscounts.push(discount as TransactionDiscount);
+        });
+        return transactionDiscounts;
+    }
+
+    export function parseTransactionsQueryResult(edges: any): Array<Transaction> {
+        let transactions: Array<Transaction> = []; 
+        edges.forEach((edge: any) => {
+            let transaction = edge.node;
+            transaction.id = parseInt(transaction.id);
+            transaction.items = parseTransactionItems(transaction.items.edges);
+            transaction.discounts = parseTransactionDiscounts(transaction.discounts.edges);
+            transactions.push(transaction as Transaction);
+        });
+        return transactions;
+    }
+}
+
 
 
 
@@ -42,19 +97,19 @@ namespace TransactionController {
     // Creates a new transaction in the database
     export async function createNewTransaction(transaction: Transaction): Promise<QueryResult> {
         let graphQuery = `mutation {
-                createTransaction( input: {
-                    transaction: {
-                        date: "${transaction.date}"
-                        salespersonId: ${transaction.salesperson_id}
-                        total: "${transaction.total}"
-                        discount: "${transaction.discount}"
-                        finalTotal: "${transaction.final_total}"
-                        paymentType: "${transaction.payment_type}"
-                        creditcardType: "${transaction.creditcard_type}"
-                        creditcardNumber: "${transaction.creditcard_number}"
-                        creditcardExpiration: "${transaction.creditcard_expiration}"
-                    }
-                }) {
+            createTransaction( input: {
+                transaction: {
+                    date: "${transaction.date}"
+                    salespersonId: ${transaction.salesperson_id}
+                    total: "${transaction.total}"
+                    discount: "${transaction.discount}"
+                    finalTotal: "${transaction.final_total}"
+                    paymentType: "${transaction.payment_type}"
+                    creditcardType: "${transaction.creditcard_type}"
+                    creditcardNumber: "${transaction.creditcard_number}"
+                    creditcardExpiration: "${transaction.creditcard_expiration}"
+                }
+            }) {
                 transaction {
                     id
                 }
@@ -160,12 +215,12 @@ namespace TransactionController {
 
         // Add the transaction record to the database
         let newCashTransaction = new CashTransactionBuilder()
-            .setDate(currentDateTime())
-            .setSalespersonId(salespersonID)
-            .setTotal(total)
-            .setDiscounts(discounts ? discounts : [])
-            .setItems(products)
-            .build();
+        .setDate(currentDateTime())
+        .setSalespersonId(salespersonID)
+        .setTotal(total)
+        .setDiscounts(discounts ? discounts : [])
+        .setItems(products)
+        .build();
         const queryResult = await createNewTransaction(newCashTransaction); // Add the transaction to the database
 
         if (queryResult.error !== null) {
@@ -188,12 +243,12 @@ namespace TransactionController {
     export async function createCardTransaction(products: Array<Product>, discount: Array<Discount> | null, salespersonID: number): Promise<QueryResult> {
         let total = calculateTotalWithDiscount(products, discount);
         let newCardTransaction = new CreditCardTransactionBuilder()
-            .setDate(currentDateTime())
-            .setSalespersonId(salespersonID)
-            .setTotal(total)
-            .setDiscounts(discount ? discount : [])
-            .setItems(products)
-            .build();
+        .setDate(currentDateTime())
+        .setSalespersonId(salespersonID)
+        .setTotal(total)
+        .setDiscounts(discount ? discount : [])
+        .setItems(products)
+        .build();
 
         let queryResult = await createNewTransaction(newCardTransaction);
 
@@ -245,6 +300,73 @@ namespace TransactionController {
     }
 
 
+    export async function getTransactionItems(transactionID: number): Promise<QueryResult> {
+        const graphQuery = `query {
+            allTransactionItems(condition: {
+                transactionId: ${transactionID}
+            }) {
+                edges {
+                    node {
+                        transactionId
+                        sku
+                        quantity
+
+                    }
+                }
+            }
+
+        }`; // We can exclude transaction ID because we already know it
+
+
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        console.log(queryResult.data.allTransactionItems);
+        let transactionItems: TransactionItems = [];
+        queryResult.data.allTransactionItems.edges.forEach((edge: any) => {
+            transactionItems.push(edge.node as TransactionItem);
+        });
+
+        return {
+            error: null,
+            data: transactionItems
+        }
+    }
+
+
+    export async function getTransactionDiscounts(transactionID: number): Promise<QueryResult> {
+        const graphQuery = `query {
+            allTransactionDiscounts (condition: {
+                transactionId: ${transactionID}
+            }) {
+                edges {
+                    node {
+                        transactionId
+                        discountId
+                    }
+                }
+            }
+        }`; // We can exclude transaction ID because we already know it
+
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        return {
+            error: null,
+            data: queryResult.data.transactionDiscountsByTransactionId
+        }
+    }
+
 
     // READ FUNCTIONS
     export async function getTransaction(transactionId: number): Promise<QueryResult> {
@@ -262,9 +384,12 @@ namespace TransactionController {
             }
         }
 
-        const transaction = queryResult.data.transactionById;
-        transaction.final_total = parseFloat(transaction.final_total);
-        transaction.discount = parseFloat(transaction.discount);
+        let transaction = queryResult.data.transactionById;
+        transaction.id = parseInt(transaction.id);
+        console.log(transaction.items);
+
+        transaction.items = Utilities.parseTransactionItems(transaction.items.edges);
+        transaction.discounts = Utilities.parseTransactionDiscounts(transaction.discounts.edges);
 
         return {
             error: null,
@@ -272,8 +397,6 @@ namespace TransactionController {
         }
 
     }
-
-
 
 
     export async function getAllTransactions(): Promise<QueryResult> {
@@ -287,6 +410,7 @@ namespace TransactionController {
             }
         }`;
 
+
         const queryResult = await execGraphQLQuery(graphQuery);
         if (queryResult.error !== null) {
             return {
@@ -295,18 +419,7 @@ namespace TransactionController {
             }
         }
 
-        let transactions: Array<Transaction> = [];
-        // Iterate through edges, get the node, transaction and push into array of transactions
-
-        queryResult.data.allTransactions.edges.forEach((edge: any) => {
-            // Stringify the node to get rid of the __typename
-            let transaction = JSON.parse(JSON.stringify(edge.node));
-            // Convert to the right types
-            transaction.discount = parseFloat(transaction.discount);
-            transaction.final_total = parseFloat(transaction.final_total);
-            // Modify transaction final_total and discount because GraphQL returns 
-            transactions.push(transaction as Transaction); // Typecast to Transaction
-        });
+        let transactions = Utilities.parseTransactionsQueryResult(queryResult.data.allTransactions.edges);
 
         return {
             error: null,
@@ -317,25 +430,31 @@ namespace TransactionController {
 
     export async function getTransactionsBySalesperson(salesPersonId: number): Promise<QueryResult> {
         // Get all transactions 
-        let allTransactions = await getAllTransactions();
-        if (allTransactions.error !== null) {
+        let graphQuery = `query {
+            allTransactions(condition: {
+                salespersonId: ${salesPersonId}
+            }) {
+                edges {
+                    node {
+                        ${Constants.nodes}
+                    }
+                }
+            }
+        }`;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
             return {
-                error: allTransactions.error,
+                error: queryResult.error,
                 data: null
             }
         }
 
-        let salespersonTransactions: Array<Transaction> = [];
-        // Filter out the transactions that are not by the salesperson
-        allTransactions.data.forEach((transaction: Transaction) => {
-            if (transaction.salesperson_id === salesPersonId) {
-                salespersonTransactions.push(transaction);
-            }
-        });
+        let transactions: Array<Transaction> = Utilities.parseTransactionsQueryResult(queryResult.data.allTransactions.edges);
+        // Iterate through the array and convert the floats that are returned as strings
 
         return {
             error: null,
-            data: salespersonTransactions
+            data: transactions
         }
 
     }
@@ -351,7 +470,7 @@ namespace TransactionController {
 
         // Sort the objects
         let transactions = allTransactions.data;
-        var transactionsNew = transactions.sort((a: Transaction, b: Transaction) => {
+        transactions.sort((a: Transaction, b: Transaction) => {
             return a.final_total - b.final_total;
         });
 
