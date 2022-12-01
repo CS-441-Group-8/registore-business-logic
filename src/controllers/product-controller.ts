@@ -2,6 +2,21 @@ import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 
 import { Product } from "../models/product-model";
 
+namespace Constants {
+    export const allNodes = `
+        sku
+        title
+        brand
+        summary
+        price
+        quantity
+        category
+        creator
+        creation_date: creationDate
+        supplier
+        image_path: imagePath`;
+}
+
 namespace ProductController {
     // CREATE FUNCTIONS
     export async function createNewProduct(product: Product): Promise<QueryResult> {
@@ -43,16 +58,7 @@ namespace ProductController {
         const graphQuery = `query {
             productBySku(sku: "${sku}")
               {
-                sku
-                brand
-                summary
-                price
-                quantity
-                category
-                creator
-                creationDate
-                supplier
-                nodeId 
+                ${Constants.allNodes}
               }
           }
         `;
@@ -78,16 +84,7 @@ namespace ProductController {
             allProducts {
                edges {
                 node {
-                    sku
-                    title
-                    brand
-                    summary
-                    price
-                    quantity
-                    category
-                    creator
-                    creationDate
-                    supplier
+                    ${Constants.allNodes}
                   }
                 }
             }
@@ -100,12 +97,14 @@ namespace ProductController {
             }
         }
 
-
-        const product = JSON.stringify(queryResult.data.allProducts);
+        let products: Array<Product> = [];
+        queryResult.data.allProducts.edges.forEach((edge: any) => {
+            products.push(edge.node);
+        });
 
         return {
             error: null,
-            data: product
+            data: products
         }
     }
 

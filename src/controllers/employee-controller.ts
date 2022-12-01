@@ -1,6 +1,23 @@
 import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 import { Employee } from "../models/employee-model";
 
+namespace Constants {
+    export const allNodes = `
+        id
+        first_name: firstName
+        last_name: lastName
+        phone_number: phoneNumber
+        email
+        address
+        city
+        state
+        zipcode
+        password
+        hire_date: hireDate
+        starting_amount: startingAmount
+    `
+}
+
 namespace EmployeeController {
     // CREATE FUNCTIONS
     export async function createNewEmployee(employee: Employee): Promise<QueryResult> {
@@ -48,18 +65,7 @@ namespace EmployeeController {
             const graphQuery = `query {
                 employeeById(
                     id: "${employeeId}" ) {
-                        id
-                        firstName
-                        lastName
-                        phoneNumber
-                        email
-                        address
-                        city
-                        state
-                        zipcode
-                        password
-                        hireDate
-                        startingAmount
+                    ${Constants.allNodes}
                 }
             }`;
 
@@ -77,6 +83,36 @@ namespace EmployeeController {
             return {
                 error: null,
                 data: employee
+            }
+        }
+
+        export async function getAllEmployees(): Promise<QueryResult> {
+            const graphQuery = `query {
+                allEmployees {
+                    edges {
+                        node {
+                            ${Constants.allNodes}
+                        }
+                    }
+                }
+            }`;
+
+            const queryResult = await execGraphQLQuery(graphQuery);
+            if (queryResult.error !== null) {
+                return {
+                    error: queryResult.error,
+                    data: null
+                }
+            }
+
+            let employees: Array<Employee> = [];
+            queryResult.data.allEmployees.edges.forEach((edge: any) => {
+                employees.push(edge.node);
+            });
+
+            return {
+                error: null,
+                data: employees
             }
         }
     
