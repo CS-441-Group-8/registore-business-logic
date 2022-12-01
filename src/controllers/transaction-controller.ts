@@ -386,7 +386,6 @@ namespace TransactionController {
 
         let transaction = queryResult.data.transactionById;
         transaction.id = parseInt(transaction.id);
-        console.log(transaction.items);
 
         transaction.items = Utilities.parseTransactionItems(transaction.items.edges);
         transaction.discounts = Utilities.parseTransactionDiscounts(transaction.discounts.edges);
