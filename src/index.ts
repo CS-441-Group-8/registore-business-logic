@@ -25,16 +25,14 @@ import { currentDateTime, isISO8601Date } from "./utils/datetime";
 // Write your test code here
 async function main() {
     // Write your test code here
-    // Use the getAll function of each controller and write it into a file
     return;
 }
 
-
-main() // NOTE: MAIN FUNCTION WILL NOT EXPORTED, THIS IS PURELY FOR TESTING
-.then(() => {
-    exit(0);
-});
-
+// Uncomment this line to run the main function
+// main() // NOTE: MAIN FUNCTION WILL NOT EXPORTED, THIS IS PURELY FOR TESTING
+// .then(() => {
+//     exit(0);
+// });
 
 export {
     // Controllers
