@@ -1,78 +1,66 @@
 // Node Imports
 import { exit } from "process";
+
 // Controller imports
 import TransactionController from "./controllers/transaction-controller";
+import EmployeeController from "./controllers/employee-controller";
+import ProductController from "./controllers/product-controller";
+import DiscountController from "./controllers/discount-controller";
+
 // Model imports
 import { TransactionSchema, Transaction, PaymentType } from "./models/transaction-model";
+import { Product, ProductSchema } from "./models/product-model";
+import { Discount, DiscountSchema } from "./models/discount-model";
+import { Employee, EmployeeSchema } from "./models/employee-model";
+
 // Builder Imports
 import { CashTransactionBuilder, CreditCardTransactionBuilder } from "./models/builders/transaction-builders";
-
+import ProductBuilder from "./models/builders/product-builder";
+import { DiscountBuilder } from "./models/builders/discount-builder";
+import { EmployeeBuilder } from "./models/builders/employee-builder";
 
 // Utility imports
 import { currentDateTime, isISO8601Date } from "./utils/datetime";
 
-// Returns a datetime string in the format YYYY-MM-DD HH:MM:SS
-
-
-
-async function createNewTransaction() {
-    const newCashTransaction = new CashTransactionBuilder()
-        .setDate(currentDateTime())
-        .setSalespersonId(1)
-        .setTotal(100)
-        .setDiscount(0)
-        .build();
-
-    const queryResult
-        = await TransactionController.createNewTransaction(newCashTransaction);
-
-    console.log(queryResult);
-}
-
-
-async function getProduct() {
-    const queryResult = await TransactionController.getTransaction(1);
-    console.log(queryResult);
-}
-
-async function updateTransactionById() {
-    const queryResult = await TransactionController.updateTransactionSalesperson(1, 4);
-    console.log(queryResult);
-}
-
-async function deleteTransactionById() {
-    const queryResult = await TransactionController.deleteTransaction(14);
-    console.log(queryResult);
-}
-
 // Write your test code here
 async function main() {
-    // await createNewTransaction(); // Works
-    // await getProduct(); // Works
-    // await updateTransactionById(); // Works
-    // await deleteTransactionById(); // Works
+    // Write your test code here
+    // Use the getAll function of each controller and write it into a file
+    return;
 }
 
 
 main() // NOTE: MAIN FUNCTION WILL NOT EXPORTED, THIS IS PURELY FOR TESTING
-    .then(() => {
-        exit(0);
-    });
+.then(() => {
+    exit(0);
+});
 
 
 export {
     // Controllers
     TransactionController,
+    EmployeeController,
+    ProductController,
+    DiscountController,
 
     // Models
     TransactionSchema,
     Transaction,
     PaymentType,
+    Product,
+    ProductSchema,
+    Discount,
+    DiscountSchema,
+    Employee,
+    EmployeeSchema,
 
 
     // Builders 
     CashTransactionBuilder,
     CreditCardTransactionBuilder,
+    ProductBuilder,
+    DiscountBuilder,
+    EmployeeBuilder,
 
 
     // Utils
@@ -80,6 +68,3 @@ export {
     isISO8601Date,
 
 }
-
-
-
