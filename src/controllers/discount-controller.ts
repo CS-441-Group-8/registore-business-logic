@@ -2,6 +2,14 @@ import { execGraphQLQuery, QueryResult } from "../database/query-runner";
 
 import { Discount, DiscountSchema } from "../models/discount-model";
 
+namespace Constants {
+    export const allNodes = `
+        id
+        discount_type: discountType
+        amount
+    `;
+}
+
 namespace DiscountController {
     // CREATE FUNCTIONS
     export async function createNewDiscount(discount: Discount): Promise<QueryResult> {
@@ -38,9 +46,7 @@ namespace DiscountController {
     export async function getDiscount(id: number): Promise<QueryResult> {
         const graphQuery = `query {
             discountById(id: ${id}) {
-                id
-                discountType
-                amount
+                ${Constants.allNodes}
             }
         }
         `;
@@ -58,6 +64,37 @@ namespace DiscountController {
         return {
             error: null,
             data: discount
+        }
+    }
+
+
+    export async function getAllDiscounts(): Promise<QueryResult> {
+        const graphQuery = `query {
+            allDiscounts {
+                edges {
+                    node {
+                        ${Constants.allNodes}
+                    }
+                }
+            }
+        }`;
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        let discounts: Array<Discount> = [];
+        queryResult.data.allDiscounts.edges.forEach((edge: any) => {
+            const discount = edge.node;
+            discounts.push(discount);
+        });
+
+        return {
+            error: null,
+            data: discounts
         }
     }
 
