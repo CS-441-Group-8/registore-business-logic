@@ -101,7 +101,7 @@ namespace ProductController {
         }
 
 
-        const product = JSON.stringify(queryResult.data.allProducts);
+        const product = JSON.stringify(queryResult.data.allProducts.edges);
 
         return {
             error: null,

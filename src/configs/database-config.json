@@ -1,7 +1,7 @@
 {
     "host": "localhost",
-    "user": "nealarchival",
-    "password": "",
-    "port": 2001,
+    "user": "postgres",
+    "password": "password",
+    "port": 5432,
     "database": "development"
 }
