@@ -28,4 +28,9 @@ export function isISO8601Date(dateString: string): boolean {
     return regex.test(dateString);
 }
 
-
+export function dateToYYYYMMDD(date: Date): string {
+	const year = date.getFullYear();
+	const month = date.getMonth() + 1;
+	const day = date.getDate();
+	return `${year}-${month}-${day}`;
+}
