@@ -1,5 +1,5 @@
 // Database Imports
-import { execGraphQLQuery, QueryResult } from "../database/query-runner";
+import { execGraphQLQuery, execSQLQuery, QueryResult } from "../database/query-runner";
 
 // Model Imports
 import {
@@ -17,7 +17,7 @@ import {
 } from "../models/builders/transaction-builders";
 
 // Utility Imports
-import { currentDateTime, isISO8601Date } from "../utils/datetime";
+import { currentDateTime, dateToYYYYMMDD } from "../utils/datetime";
 
 import { Product } from "../models/product-model";
 import { Discount } from "../models/discount-model";
@@ -479,7 +479,36 @@ namespace TransactionController {
         }
     }
 
+	export async function getTransactionsBetweenDates(from: Date, to: Date): Promise<QueryResult> {
+		// Convert date to: yyyy-mm-dd
+		let formatDate = (date: Date): string => {
+			// Convert date to string 
+			let dateString = date.toISOString(); 
+			// Format as: "yyyy-mm-dd hh:mm:ss"
+			dateString = dateString.substring(0, dateString.indexOf("T"));
+			// RE to remove preceding zeros
+			dateString = dateString.replace(/-(0[1-9]|1[0-2])-0([1-9]|[1-2][0-9]|3[0-1])/g, "-$1-$2");
+			return `${dateString} 00:00:00`;
+		}
+		console.log(formatDate(from));
+		console.log(formatDate(to));
+		let sqlQuery = `SELECT * FROM transaction WHERE date BETWEEN '${formatDate(from)}' AND '${formatDate(to)}'`;
+		console.log(sqlQuery);
+		let queryResult = await execSQLQuery(sqlQuery, []);
+		console.log("Query result: ", queryResult);
+		if (queryResult.error !== null) {
+			return {
+				error: queryResult.error,
+				data: null
+			}
+		}
 
+		return {
+			error: null,
+			data: queryResult
+		}
+
+	}
 
     // UPDATE FUNCTIONS
     export async function updateTransactionSalesperson(transactionId: number, salesPersonId: number): Promise<QueryResult> {
