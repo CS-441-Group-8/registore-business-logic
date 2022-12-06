@@ -490,15 +490,18 @@ namespace TransactionController {
 			dateString = dateString.replace(/-(0[1-9]|1[0-2])-0([1-9]|[1-2][0-9]|3[0-1])/g, "-$1-$2");
 			return `${dateString} 00:00:00`;
 		}
-		console.log(formatDate(from));
-		console.log(formatDate(to));
-		let sqlQuery = `SELECT * FROM transaction WHERE date BETWEEN '${formatDate(from)}' AND '${formatDate(to)}'`;
-		console.log(sqlQuery);
-		let queryResult = await execSQLQuery(sqlQuery, []);
-		console.log("Query result: ", queryResult);
-		if (queryResult.error !== null) {
+		// let sqlQuery = `SELECT * FROM transaction WHERE date BETWEEN '${formatDate(from)}' AND '${formatDate(to)}'`;
+		// Use placeholders to prevent SQL injection
+		let sqlQuery = `SELECT * FROM transaction WHERE date BETWEEN $1 AND $2`;
+		let sqlParams = [formatDate(from), formatDate(to)];
+		let queryResult = await execSQLQuery(sqlQuery, sqlParams);
+		// let queryResult = await execSQLQuery(sqlQuery, []);
+		// console.log("Query result: ", queryResult);
+		// queryResult will return undefined if an error occurred
+		// if [], then no error occurred, but no rows were returned
+		if (queryResult === undefined || queryResult.error === null) {
 			return {
-				error: queryResult.error,
+				error: "Error occurred obtaining transactions between dates",
 				data: null
 			}
 		}
