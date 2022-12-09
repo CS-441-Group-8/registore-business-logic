@@ -47,49 +47,49 @@ namespace EmployeeController {
           }`;
 
         const queryResult = await execGraphQLQuery(graphQuery);
-        
+
         if (queryResult.error !== null) {
             return {
                 error: queryResult.error,
                 data: null
             }
         }
-        
+
         const id = queryResult.data.createEmployee.employee.id;
-       
+
         return {
             error: null,
             data: id
         }
     }
-        // READ FUNCTIONS
-        export async function getEmployee(employeeId: number): Promise<QueryResult> {
-            const graphQuery = `query {
+    // READ FUNCTIONS
+    export async function getEmployee(employeeId: number): Promise<QueryResult> {
+        const graphQuery = `query {
                 employeeById(
                     id: "${employeeId}" ) {
                     ${Constants.allNodes}
                 }
             }`;
 
-            const queryResult = await execGraphQLQuery(graphQuery);
-            
-            if (queryResult.error !== null) {
-                return {
-                    error: queryResult.error,
-                    data: null
-                }
-            }
-    
-            const employee = queryResult.data.employeeById;
-    
+        const queryResult = await execGraphQLQuery(graphQuery);
+
+        if (queryResult.error !== null) {
             return {
-                error: null,
-                data: employee
+                error: queryResult.error,
+                data: null
             }
         }
 
-        export async function getAllEmployees(): Promise<QueryResult> {
-            const graphQuery = `query {
+        const employee = queryResult.data.employeeById;
+
+        return {
+            error: null,
+            data: employee
+        }
+    }
+
+    export async function getAllEmployees(): Promise<QueryResult> {
+        const graphQuery = `query {
                 allEmployees {
                     edges {
                         node {
@@ -99,27 +99,27 @@ namespace EmployeeController {
                 }
             }`;
 
-            const queryResult = await execGraphQLQuery(graphQuery);
-            if (queryResult.error !== null) {
-                return {
-                    error: queryResult.error,
-                    data: null
-                }
-            }
-
-            let employees: Array<Employee> = [];
-            queryResult.data.allEmployees.edges.forEach((edge: any) => {
-                employees.push(edge.node);
-            });
-
+        const queryResult = await execGraphQLQuery(graphQuery);
+        if (queryResult.error !== null) {
             return {
-                error: null,
-                data: employees
+                error: queryResult.error,
+                data: null
             }
         }
-    
-           // UPDATE FUNCTIONS
-    export async function updateEmployee(employeeId: number, first_name: string, last_name: string, phone_number: string, email: string, address: string, city: string, state: string, zipcode: string, password: string, hire_date: string, starting_amount: number, styling : string): Promise<QueryResult> {
+
+        let employees: Array<Employee> = [];
+        queryResult.data.allEmployees.edges.forEach((edge: any) => {
+            employees.push(edge.node);
+        });
+
+        return {
+            error: null,
+            data: employees
+        }
+    }
+
+    // UPDATE FUNCTIONS
+    export async function updateEmployee(employeeId: number, first_name: string, last_name: string, phone_number: string, email: string, address: string, city: string, state: string, zipcode: string, password: string, hire_date: string, starting_amount: number, styling: string): Promise<QueryResult> {
         const graphQuery = `mutation {
             updateEmployeeById( 
                 input: {
@@ -155,23 +155,55 @@ namespace EmployeeController {
                 }
             }
         }`;
-        
-      const queryResult = await execGraphQLQuery(graphQuery);
 
-if (queryResult.error !== null) {
-    return {
-        error: queryResult.error,
-        data: null
+        const queryResult = await execGraphQLQuery(graphQuery);
+
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        const id = queryResult.data.updateEmployeeById.employee;
+
+        return {
+            error: null,
+            data: id
+        }
     }
-}
+    export async function updateEmployeeStyling(employeeId: number, styling: string): Promise<QueryResult> {
+        const graphQuery = `mutation {
+        updateEmployeeById( 
+            input: {
+                id: "${employeeId}",
+                    employeePatch: {
+                        styling: ${styling}
+            }
+        }) {
+            employee {
+                id
+                styling
+            }
+        }
+    }`;
 
-const id = queryResult.data.createEmployee.employee.id;
+        const queryResult = await execGraphQLQuery(graphQuery);
 
-return {
-    error: null,
-    data: id
+        if (queryResult.error !== null) {
+            return {
+                error: queryResult.error,
+                data: null
+            }
+        }
+
+        const id = queryResult.data.updateEmployeeById.employee;
+
+        return {
+            error: null,
+            data: id
+        }
     }
-}
     // DELETE FUNCTIONS
     export async function deleteEmployee(employeeId: number): Promise<QueryResult> {
         const graphQuery = `mutation {
