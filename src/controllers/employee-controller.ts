@@ -37,7 +37,7 @@ namespace EmployeeController {
                     password: "${employee.password}" 
                     hireDate: "${employee.hire_date}" 
                     startingAmount: ${employee.starting_amount}
-                    styling: ${employee.styling}
+                    styling: "${employee.styling}"
                 }
               }) {
               employee {
@@ -136,7 +136,7 @@ namespace EmployeeController {
                             password: "${password}",
                             hireDate: "${hire_date}",
                             startingAmount: ${starting_amount}",
-                            styling: ${styling}
+                            styling: "${styling}"
                 }
             }) {
                 employee {
@@ -178,7 +178,7 @@ namespace EmployeeController {
             input: {
                 id: "${employeeId}",
                     employeePatch: {
-                        styling: ${styling}
+                        styling: "${styling}"
             }
         }) {
             employee {
