@@ -15,6 +15,7 @@ namespace Constants {
         password
         hire_date: hireDate
         starting_amount: startingAmount
+        styling
     `
 }
 
@@ -36,6 +37,7 @@ namespace EmployeeController {
                     password: "${employee.password}" 
                     hireDate: "${employee.hire_date}" 
                     startingAmount: ${employee.starting_amount}
+                    styling: ${employee.styling}
                 }
               }) {
               employee {
@@ -117,7 +119,7 @@ namespace EmployeeController {
         }
     
            // UPDATE FUNCTIONS
-    export async function updateEmployee(employeeId: number, first_name: string, last_name: string, phone_number: string, email: string, address: string, city: string, state: string, zipcode: string, password: string, hire_date: string, starting_amount: number): Promise<QueryResult> {
+    export async function updateEmployee(employeeId: number, first_name: string, last_name: string, phone_number: string, email: string, address: string, city: string, state: string, zipcode: string, password: string, hire_date: string, starting_amount: number, styling : string): Promise<QueryResult> {
         const graphQuery = `mutation {
             updateEmployeeById( 
                 input: {
@@ -133,7 +135,8 @@ namespace EmployeeController {
                             zipcode: "${zipcode}",
                             password: "${password}",
                             hireDate: "${hire_date}",
-                            startingAmount: ${starting_amount}
+                            startingAmount: ${starting_amount}",
+                            styling: ${styling}
                 }
             }) {
                 employee {
