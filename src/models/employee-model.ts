@@ -29,6 +29,7 @@ class Employee implements EmployeeSchema {
     password: string;
     hire_date: string;
     starting_amount: number;
+    styling: string;
 
 	// Constructor will take a EmployeeSchema object and assign it to the class
 	constructor(employee: EmployeeSchema) {
@@ -44,6 +45,7 @@ class Employee implements EmployeeSchema {
         this.password = employee.password;
         this.hire_date = employee.hire_date;
         this.starting_amount = employee.starting_amount;
+        this.styling = employee.styling;
 	}
 }
 

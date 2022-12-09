@@ -13,6 +13,7 @@ interface EmployeeBuilder {
     setPassword(password: string): EmployeeBuilder;
     setHireDate(hire_date: string): EmployeeBuilder;
     setStartingAmount(starting_amount: number): EmployeeBuilder;
+    setStyling(styling: string): EmployeeBuilder;
 }
 class EmployeeBuilder implements EmployeeBuilder {
     private employee: Employee;
@@ -29,7 +30,8 @@ class EmployeeBuilder implements EmployeeBuilder {
             zipcode: "",
             password: "",
             hire_date: "",
-            starting_amount: 0
+            starting_amount: 0,
+            styling: ""
         };
     }
 
@@ -83,6 +85,10 @@ class EmployeeBuilder implements EmployeeBuilder {
     }
     setStartingAmount(starting_amount: number) {
         this.employee.starting_amount = starting_amount;
+        return this;
+    }
+    setStyling(styling: string) {
+        this.employee.styling = styling;
         return this;
     }
 }

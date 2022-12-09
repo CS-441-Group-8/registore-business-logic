@@ -12,6 +12,7 @@ create table employee (
 	password VARCHAR(64) NOT NULL,
 	hire_date DATE NOT NULL,
 	starting_amount FLOAT NOT NULL
+    styling
 );
 */
 
@@ -29,6 +30,7 @@ interface EmployeeSchema {
     password: string;
     hire_date: string;
     starting_amount: number;
+    styling: string;
 }
 
 export {EmployeeSchema};
