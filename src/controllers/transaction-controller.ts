@@ -211,16 +211,19 @@ namespace TransactionController {
 
     // Creates a Transaction Object given products, discount, and salesperson ID
     export async function createCashTransaction(products: Array<Product>, discounts: Array<Discount> | null, salespersonID: number): Promise<QueryResult> {
-        let total = calculateTotalWithDiscount(products, discounts); // Calculate total, returns a number
+        let totalWithoutDiscount = calculateTotal(products); // Calculate total without discount, returns a number
+        let finalTotal = calculateTotalWithDiscount(products, discounts); // Calculate total, returns a number
 
         // Add the transaction record to the database
         let newCashTransaction = new CashTransactionBuilder()
         .setDate(currentDateTime())
         .setSalespersonId(salespersonID)
-        .setTotal(total)
+        .setTotal(totalWithoutDiscount)
         .setDiscounts(discounts ? discounts : [])
         .setItems(products)
         .build();
+
+        newCashTransaction.final_total = finalTotal;
         const queryResult = await createNewTransaction(newCashTransaction); // Add the transaction to the database
 
         if (queryResult.error !== null) {
@@ -280,19 +283,22 @@ namespace TransactionController {
 
     export function calculateTotalWithDiscount(products: Array<Product>, discount: Array<Discount> | null): number {
         // Calculate the cost of the transaction
-        let total: number = 0;
-        products.forEach((product: Product) => {
-            total += product.price;
-        });
+        let total: number = calculateTotal(products);
         // Apply the discounts
+        let discountPercentage = 0;
         if (discount !== null) {
             // Calculate the discounted total
-            discount.forEach((discount: Discount) => {
-                total -= discount.amount;
-                if (total < 0) {
-                    total = 0;
-                }
+            discount.forEach((discount: Discount) => { // Loop through the applied discounts
+                // Discounts are stored in percentage, so we need to convert them to decimal
+                discountPercentage += discount.amount;
             });
+
+            discountPercentage = 1 - discountPercentage;
+            if (discountPercentage < 0) {
+                discountPercentage = 0;
+            }
+
+            total *= discountPercentage;
         }
         // Round the total to 2 decimal places
         return Math.round(total * 100) / 100;
