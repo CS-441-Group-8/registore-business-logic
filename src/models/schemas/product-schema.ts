@@ -25,6 +25,7 @@ interface ProductSchema {
     creator: number;
     creation_date: string;
     supplier: string | null;
+    image_path: string | null;
 }
 
 

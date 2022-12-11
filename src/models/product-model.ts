@@ -25,6 +25,7 @@ class Product implements ProductSchema{
     creator: number;
     creation_date: string;
     supplier: string | null;
+    image_path: string | null;
     constructor(product: ProductSchema) {
         this.sku = product.sku;
         this.title = product.title;
@@ -36,6 +37,7 @@ class Product implements ProductSchema{
         this.creator = product.creator;
         this.creation_date = product.creation_date;
         this.supplier = product.supplier;
+        this.image_path = product.image_path;
 	}
 }
 export {

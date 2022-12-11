@@ -28,7 +28,8 @@ class ProductBuilder implements ProductBuilder {
             category: "",
             creator: 0,
             creation_date: String(this.yourDate),
-            supplier: ""
+            supplier: "",
+            image_path: "./imgs/products/default.jpg"
         };
     }
     setSKU(sku: string)
@@ -70,6 +71,10 @@ class ProductBuilder implements ProductBuilder {
     }
     setSupplier(supplier: string | null){
         this.product.supplier = supplier;
+        return this;
+    }
+    setImagePath(imagePath: string | null) {
+        this.product.image_path = imagePath;
         return this;
     }
     build()
