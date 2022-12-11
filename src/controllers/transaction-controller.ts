@@ -288,9 +288,9 @@ namespace TransactionController {
         let discountPercentage = 0;
         if (discount !== null) {
             // Calculate the discounted total
-            discount.forEach((discount: Discount) => { // Loop through the applied discounts
+            discount.forEach((d: Discount) => { // Loop through the applied discounts
                 // Discounts are stored in percentage, so we need to convert them to decimal
-                discountPercentage += discount.amount;
+                discountPercentage += d.amount;
             });
 
             discountPercentage = 1 - discountPercentage;
