@@ -101,9 +101,9 @@ namespace TransactionController {
                 transaction: {
                     date: "${transaction.date}"
                     salespersonId: ${transaction.salesperson_id}
-                    total: "${transaction.total}"
-                    discount: "${transaction.discount}"
-                    finalTotal: "${transaction.final_total}"
+                    total: ${transaction.total}
+                    discount: ${transaction.discount}
+                    finalTotal: ${transaction.final_total}
                     paymentType: "${transaction.payment_type}"
                     creditcardType: "${transaction.creditcard_type}"
                     creditcardNumber: "${transaction.creditcard_number}"
