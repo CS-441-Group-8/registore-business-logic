@@ -26,8 +26,8 @@ namespace ProductController {
                 clientMutationId : "${Date.now()}"
                 product:{sku: "${product.sku}", title: "${product.title}", brand: "${product.brand}", 
                 summary: "${product.summary}", price: ${product.price}, quantity: ${product.quantity}, 
-                category: "${product.category}", creator: ${product.creator}, creationDate: "${product.creation_date}", supplier: "${product.supplier}"
-                imagePath: "${product.image_path}"},
+                category: "${product.category}", creator: ${product.creator}, creationDate: "${product.creation_date}", supplier: "${product.supplier}",
+                imagePath: "${product.image_path}"}
               }) {
               product {
                 sku
